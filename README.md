@@ -40,6 +40,47 @@ sudo pacman -S tcpdump wireshark-qt tshark netcat socat
 7. Keep the port as `8051`.
 8. Save settings and reboot the bridge.
 
+## Technical Findings (Ongoing Investigation)
+
+### 2025-03-22 Micron N25Q256A
+
+[N25Q256A@SOIC8.BIN](flashrom/N25Q256A@SOIC8.BIN)
+- Board component: U45, 8-Lead, VDFPN8 – MLP8 
+- Flash Memory BIN dumped.
+- Size: 33 554 432 bytes (33,6 MB)
+
+### Initial Observations from Captured Data
+
+#### `bridge_data_hex.log`
+
+The log contains structured binary messages with repeating patterns, likely containing sensor IDs, power readings, and possible control messages. Examples:
+
+```
+1742548731 - 192.168.2.246:2655 - 5555840010280e0001170006003300000000000d0010280e00061f00b90500000031b901...
+1742548731 - 192.168.2.246:2655 - 55550b0010280e00000102416b004c3f
+1742548731 - 192.168.2.246:2655 - 55550b001eef0f0051020d7c01001c52
+```
+
+- The `5555` prefix appears consistent, possibly an indicator for message headers.
+- Variable-length data fields suggest different message types.
+- Some sections seem to contain structured counters or identifiers.
+
+#### `bridge_proxy.log`
+
+Captured interactions between the bridge and `col.panpwrws.com`:
+
+```
+2025-03-21 11:41:32,100 - INFO: CLIENT_TO_SERVER -> 55550b0010280e00000102416b004c3f
+2025-03-21 11:41:32,212 - INFO: SERVER_TO_CLIENT -> 5a
+2025-03-21 11:41:32,219 - INFO: CLIENT_TO_SERVER -> 55550d0010280e000112000402416b004c97
+2025-03-21 11:41:32,330 - INFO: SERVER_TO_CLIENT -> 5a
+```
+
+- The bridge sends structured messages to the cloud server.
+- The cloud server responds with simple `5a` acknowledgments, suggesting minimal interaction beyond message reception.
+- Some messages contain data payloads that might correspond to sensor values or configuration updates.
+
+
 ### Capturing TCP Traffic
 
 #### Basic TCP Listener
@@ -104,44 +145,6 @@ Filters in Wireshark:
 
 - `tcp.port == 8051`
 - "Follow TCP Stream"
-
-## Technical Findings (Ongoing Investigation)
-
-### 2025-03-22 Micron N25Q256A
-Board component: U45, 8-Lead, VDFPN8 – MLP8 
-Flash Memory BIN dumped.
-Size: 33 554 432 bytes (33,6 MB)
-
-### Initial Observations from Captured Data
-
-#### `bridge_data_hex.log`
-
-The log contains structured binary messages with repeating patterns, likely containing sensor IDs, power readings, and possible control messages. Examples:
-
-```
-1742548731 - 192.168.2.246:2655 - 5555840010280e0001170006003300000000000d0010280e00061f00b90500000031b901...
-1742548731 - 192.168.2.246:2655 - 55550b0010280e00000102416b004c3f
-1742548731 - 192.168.2.246:2655 - 55550b001eef0f0051020d7c01001c52
-```
-
-- The `5555` prefix appears consistent, possibly an indicator for message headers.
-- Variable-length data fields suggest different message types.
-- Some sections seem to contain structured counters or identifiers.
-
-#### `bridge_proxy.log`
-
-Captured interactions between the bridge and `col.panpwrws.com`:
-
-```
-2025-03-21 11:41:32,100 - INFO: CLIENT_TO_SERVER -> 55550b0010280e00000102416b004c3f
-2025-03-21 11:41:32,212 - INFO: SERVER_TO_CLIENT -> 5a
-2025-03-21 11:41:32,219 - INFO: CLIENT_TO_SERVER -> 55550d0010280e000112000402416b004c97
-2025-03-21 11:41:32,330 - INFO: SERVER_TO_CLIENT -> 5a
-```
-
-- The bridge sends structured messages to the cloud server.
-- The cloud server responds with simple `5a` acknowledgments, suggesting minimal interaction beyond message reception.
-- Some messages contain data payloads that might correspond to sensor values or configuration updates.
 
 ### Next Steps
 
